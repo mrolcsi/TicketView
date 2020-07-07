@@ -2,18 +2,13 @@ package com.vipulasri.ticketview;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathEffect;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
-import android.renderscript.Allocation;
-import android.renderscript.Element;
-import android.renderscript.RenderScript;
-import android.renderscript.ScriptIntrinsicBlur;
+import android.os.Build;
 import android.support.annotation.IntDef;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -21,12 +16,6 @@ import android.view.View;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-
-import static android.graphics.Bitmap.Config.ALPHA_8;
-import static android.graphics.Color.BLACK;
-import static android.graphics.Color.TRANSPARENT;
-import static android.graphics.Paint.ANTI_ALIAS_FLAG;
-import static android.graphics.PorterDuff.Mode.SRC_IN;
 
 /**
  * Created by Vipul Asri on 31/10/17.
@@ -85,8 +74,6 @@ public class TicketView extends View {
     private int mCornerType;
     private int mCornerRadius;
     private int mDividerPadding;
-    private Bitmap mShadow;
-    private final Paint mShadowPaint = new Paint(ANTI_ALIAS_FLAG);
     private float mShadowBlurRadius = 0f;
 
     public TicketView(Context context) {
@@ -109,9 +96,6 @@ public class TicketView extends View {
         super.onDraw(canvas);
         if (mDirty) {
             doLayout();
-        }
-        if (mShadowBlurRadius > 0f && !isInEditMode()) {
-            canvas.drawBitmap(mShadow, 0f, mShadowBlurRadius / 2f, null);
         }
         canvas.drawPath(mPath, mBackgroundPaint);
         if (mShowBorder) {
@@ -260,36 +244,7 @@ public class TicketView extends View {
             mDividerStopY = bottom - mScallopRadius - mDividerPadding;
         }
 
-        generateShadow();
         mDirty = false;
-    }
-
-    private void generateShadow() {
-        if (isJellyBeanAndAbove() && !isInEditMode()) {
-            if (mShadowBlurRadius == 0f) return;
-
-            if (mShadow == null) {
-                mShadow = Bitmap.createBitmap(getWidth(), getHeight(), ALPHA_8);
-            } else {
-                mShadow.eraseColor(TRANSPARENT);
-            }
-            Canvas c = new Canvas(mShadow);
-            c.drawPath(mPath, mShadowPaint);
-            if (mShowBorder) {
-                c.drawPath(mPath, mShadowPaint);
-            }
-            RenderScript rs = RenderScript.create(getContext());
-            ScriptIntrinsicBlur blur = ScriptIntrinsicBlur.create(rs, Element.U8(rs));
-            Allocation input = Allocation.createFromBitmap(rs, mShadow);
-            Allocation output = Allocation.createTyped(rs, input.getType());
-            blur.setRadius(mShadowBlurRadius);
-            blur.setInput(input);
-            blur.forEach(output);
-            output.copyTo(mShadow);
-            input.destroy();
-            output.destroy();
-            blur.destroy();
-        }
     }
 
     private void init(AttributeSet attrs) {
@@ -332,12 +287,11 @@ public class TicketView extends View {
             typedArray.recycle();
         }
 
-        mShadowPaint.setColorFilter(new PorterDuffColorFilter(BLACK, SRC_IN));
-        mShadowPaint.setAlpha(51); // 20%
-
         initElements();
 
-        setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        // Hardware Acceleration is only supported on API 28 and above
+        if (Build.VERSION.SDK_INT < 28)
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     }
 
     private void initElements() {
@@ -362,6 +316,7 @@ public class TicketView extends View {
         mBackgroundPaint.setAntiAlias(true);
         mBackgroundPaint.setColor(mBackgroundColor);
         mBackgroundPaint.setStyle(Paint.Style.FILL);
+        mBackgroundPaint.setShadowLayer(mShadowBlurRadius, 0f, 4f, 0x33000000);
     }
 
     private void setBorderPaint() {
@@ -578,7 +533,7 @@ public class TicketView extends View {
     }
 
     public void setTicketElevation(float elevation) {
-        if (!isJellyBeanAndAbove()) {
+        if (isBelowJellyBean()) {
             Log.w(TAG, "Ticket elevation only works with Android Jelly Bean and above");
             return;
         }
@@ -587,7 +542,7 @@ public class TicketView extends View {
     }
 
     private void setShadowBlurRadius(float elevation) {
-        if (!isJellyBeanAndAbove()) {
+        if (isBelowJellyBean()) {
             Log.w(TAG, "Ticket elevation only works with Android Jelly Bean and above");
             return;
         }
@@ -595,7 +550,7 @@ public class TicketView extends View {
         mShadowBlurRadius = Math.min(25f * (elevation / maxElevation), 25f);
     }
 
-    private boolean isJellyBeanAndAbove() {
-        return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
+    private boolean isBelowJellyBean() {
+        return android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
     }
 }
