@@ -13,6 +13,7 @@ import android.support.annotation.IntDef;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
+import android.widget.FrameLayout;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -21,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
  * Created by Vipul Asri on 31/10/17.
  */
 
-public class TicketView extends View {
+public class TicketView extends FrameLayout {
 
     public static final String TAG = TicketView.class.getSimpleName();
 
@@ -76,6 +77,11 @@ public class TicketView extends View {
     private int mDividerPadding;
     private float mShadowBlurRadius = 0f;
 
+    private int mOriginalPaddingLeft;
+    private int mOriginalPaddingRight;
+    private int mOriginalPaddingTop;
+    private int mOriginalPaddingBottom;
+
     public TicketView(Context context) {
         super(context);
         init(null);
@@ -108,10 +114,11 @@ public class TicketView extends View {
 
     private void doLayout() {
         float offset;
-        float left = getPaddingLeft() + mShadowBlurRadius;
-        float right = getWidth() - getPaddingRight() - mShadowBlurRadius;
-        float top = getPaddingTop() + (mShadowBlurRadius / 2);
-        float bottom = getHeight() - getPaddingBottom() - mShadowBlurRadius - (mShadowBlurRadius / 2);
+        float left = getPaddingLeft();
+        float right = getWidth() - getPaddingRight();
+        float top = getPaddingTop();
+        float bottom = getHeight() - getPaddingBottom();
+
         mPath.reset();
 
         if (mOrientation == Orientation.HORIZONTAL) {
@@ -248,6 +255,8 @@ public class TicketView extends View {
     }
 
     private void init(AttributeSet attrs) {
+        this.setWillNotDraw(false);
+
         if (attrs != null) {
             TypedArray typedArray = getContext().obtainStyledAttributes(attrs, R.styleable.TicketView);
             mOrientation = typedArray.getInt(R.styleable.TicketView_ticketOrientation, Orientation.HORIZONTAL);
@@ -257,7 +266,7 @@ public class TicketView extends View {
                 throw new IllegalStateException("Either set 'ticketScallopPosition' or 'ticketScallopPositionPercent'. You can't set both!");
             } else {
                 if (typedArray.hasValue(R.styleable.TicketView_ticketScallopPosition)) {
-                    mScallopPosition = typedArray.getDimensionPixelSize(R.styleable.TicketView_ticketScallopPosition, Utils.dpToPx(0f, getContext()));
+                    mScallopPosition = typedArray.getDimensionPixelOffset(R.styleable.TicketView_ticketScallopPosition, Utils.dpToPx(0f, getContext()));
                 } else {
                     mScallopPositionPercent = typedArray.getFloat(R.styleable.TicketView_ticketScallopPositionPercent, 50);
                 }
@@ -286,6 +295,11 @@ public class TicketView extends View {
 
             typedArray.recycle();
         }
+
+        mOriginalPaddingLeft = getPaddingLeft();
+        mOriginalPaddingRight = getPaddingRight();
+        mOriginalPaddingTop = getPaddingTop();
+        mOriginalPaddingBottom = getPaddingBottom();
 
         initElements();
 
@@ -546,8 +560,17 @@ public class TicketView extends View {
             Log.w(TAG, "Ticket elevation only works with Android Jelly Bean and above");
             return;
         }
+
         float maxElevation = Utils.dpToPx(24f, getContext());
         mShadowBlurRadius = Math.min(25f * (elevation / maxElevation), 25f);
+
+        // Update padding
+        setPadding(
+                Math.round(mOriginalPaddingLeft + mShadowBlurRadius),
+                Math.round(mOriginalPaddingTop + mShadowBlurRadius / 2),
+                Math.round(mOriginalPaddingRight + mShadowBlurRadius),
+                Math.round(mOriginalPaddingBottom + mShadowBlurRadius + mShadowBlurRadius / 2)
+        );
     }
 
     private boolean isBelowJellyBean() {
