@@ -131,7 +131,11 @@ public class TicketView extends View {
         mPath.reset();
 
         if (mOrientation == Orientation.HORIZONTAL) {
-            offset = ((top + bottom) / mScallopPosition) - mScallopRadius;
+            if (mScallopPositionPercent > 0) {
+                offset = ((top + bottom) / (100 / mScallopPositionPercent)) - mScallopRadius;
+            } else {
+                offset = top + mScallopPosition - mScallopRadius;
+            }
 
             if (mCornerType == CornerType.ROUNDED) {
                 mPath.arcTo(getTopLeftCornerRoundedArc(top, left), 180.0f, 90.0f, false);
@@ -178,10 +182,13 @@ public class TicketView extends View {
 
             mRect.set(left - mScallopRadius, top + offset, left + mScallopRadius, mScallopHeight + offset + top);
             mPath.arcTo(mRect, 90.0f, -180.0f, false);
-            mPath.close();
 
         } else {
-            offset = (((right + left) / mScallopPosition) - mScallopRadius);
+            if (mScallopPositionPercent > 0) {
+                offset = ((right + left) / (100 / mScallopPositionPercent)) - mScallopRadius;
+            } else {
+                offset = left + mScallopPosition - mScallopRadius;
+            }
 
             if (mCornerType == CornerType.ROUNDED) {
                 mPath.arcTo(getTopLeftCornerRoundedArc(top, left), 180.0f, 90.0f, false);
@@ -236,8 +243,9 @@ public class TicketView extends View {
             } else {
                 mPath.lineTo(left, bottom);
             }
-            mPath.close();
         }
+
+        mPath.close();
 
         // divider
         if (mOrientation == Orientation.HORIZONTAL) {
@@ -290,7 +298,15 @@ public class TicketView extends View {
             mOrientation = typedArray.getInt(R.styleable.TicketView_ticketOrientation, Orientation.HORIZONTAL);
             mBackgroundColor = typedArray.getColor(R.styleable.TicketView_ticketBackgroundColor, getResources().getColor(android.R.color.white));
             mScallopRadius = typedArray.getDimensionPixelSize(R.styleable.TicketView_ticketScallopRadius, Utils.dpToPx(20f, getContext()));
-            mScallopPositionPercent = typedArray.getFloat(R.styleable.TicketView_ticketScallopPositionPercent, 50);
+            if (typedArray.hasValue(R.styleable.TicketView_ticketScallopPosition) && typedArray.hasValue(R.styleable.TicketView_ticketScallopPositionPercent)) {
+                throw new IllegalStateException("Either set 'ticketScallopPosition' or 'ticketScallopPositionPercent'. You can't set both!");
+            } else {
+                if (typedArray.hasValue(R.styleable.TicketView_ticketScallopPosition)) {
+                    mScallopPosition = typedArray.getDimensionPixelSize(R.styleable.TicketView_ticketScallopPosition, Utils.dpToPx(0f, getContext()));
+                } else {
+                    mScallopPositionPercent = typedArray.getFloat(R.styleable.TicketView_ticketScallopPositionPercent, 50);
+                }
+            }
             mShowBorder = typedArray.getBoolean(R.styleable.TicketView_ticketShowBorder, false);
             mBorderWidth = typedArray.getDimensionPixelSize(R.styleable.TicketView_ticketBorderWidth, Utils.dpToPx(2f, getContext()));
             mBorderColor = typedArray.getColor(R.styleable.TicketView_ticketBorderColor, getResources().getColor(android.R.color.black));
@@ -331,7 +347,6 @@ public class TicketView extends View {
             Log.w(TAG, "You cannot apply divider width greater than scallop radius. Applying divider width to scallop radius.");
         }
 
-        mScallopPosition = 100 / mScallopPositionPercent;
         mScallopHeight = mScallopRadius * 2;
 
         setBackgroundPaint();
@@ -415,6 +430,15 @@ public class TicketView extends View {
 
     public void setOrientation(int orientation) {
         this.mOrientation = orientation;
+        initElements();
+    }
+
+    public float getScallopPosition() {
+        return mScallopPosition;
+    }
+
+    public void setScallopPosition(float scallopPosition) {
+        this.mScallopPosition = scallopPosition;
         initElements();
     }
 

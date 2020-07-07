@@ -8,6 +8,7 @@
         </attr>
         <attr name="ticketBackgroundColor" format="color" />
         <attr name="ticketScallopRadius" format="dimension" />
+        <attr name="ticketScallopPosition" format="dimension" />
         <attr name="ticketScallopPositionPercent" format="float" />
         <attr name="ticketShowBorder" format="boolean" />
         <attr name="ticketBorderWidth" format="dimension" />
