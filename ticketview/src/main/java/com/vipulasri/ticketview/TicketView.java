@@ -123,9 +123,9 @@ public class TicketView extends FrameLayout {
 
         if (mOrientation == Orientation.HORIZONTAL) {
             if (mScallopPositionPercent > 0) {
-                offset = ((top + bottom) / (100 / mScallopPositionPercent)) - mScallopRadius;
+                offset = ((top + bottom) / (100 / mScallopPositionPercent)) - mScallopRadius - mShadowBlurRadius / 2;
             } else {
-                offset = top + mScallopPosition - mScallopRadius;
+                offset = top + mScallopPosition - mScallopRadius - mShadowBlurRadius / 2;
             }
 
             if (mCornerType == CornerType.ROUNDED) {
@@ -176,9 +176,9 @@ public class TicketView extends FrameLayout {
 
         } else {
             if (mScallopPositionPercent > 0) {
-                offset = ((right + left) / (100 / mScallopPositionPercent)) - mScallopRadius;
+                offset = ((right + left) / (100 / mScallopPositionPercent)) - mScallopRadius - mShadowBlurRadius;
             } else {
-                offset = left + mScallopPosition - mScallopRadius;
+                offset = left + mScallopPosition - mScallopRadius - mShadowBlurRadius;
             }
 
             if (mCornerType == CornerType.ROUNDED) {
